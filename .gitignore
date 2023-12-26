@@ -1,0 +1,6 @@
+.vscode
+
+inventory.yml
+roles/*
+!roles/README.MD
+!roles/requirements.yml

@@ -1,0 +1,44 @@
+---
+- name: Initialize cluster
+  ansible.builtin.command:
+    cmd: kubeadm init --cri-socket /var/run/cri-dockerd.sock --pod-network-cidr={{podNetwork}}
+    creates: /etc/kubernetes/kubelet.conf
+- name: Create .kubectl directory for {{user}}
+  become: true
+  become_user: "{{user}}"
+  ansible.builtin.file:
+    path: /home/{{user}}/.kube
+    mode: 0700
+    state: directory
+- name: Copy configuration to .kubectl for {{user}}
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    remote_src: yes
+    dest: /home/{{user}}/.kube/config
+    owner: "{{user}}"
+    group: "{{user}}"
+    mode: 0600
+- name: Create .kubectl directory for root
+  ansible.builtin.file:
+    path: /root/.kube
+    mode: 0700
+    state: directory
+- name: Copy configuration to .kubectl for root
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    remote_src: yes
+    dest: /root/.kube/config
+    mode: 0600
+- name: Apply WeaveNet config
+  kubernetes.core.k8s:
+    src: https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+    state: present
+    apply: yes
+- name: Get join command
+  ansible.builtin.command:
+    cmd: kubeadm token create --print-join-command
+  changed_when: False
+  register: joinCommand
+- name: Save join command as fact
+  ansible.builtin.set_fact:
+    kubernetesJoinCommand: "{{joinCommand.stdout}} --cri-socket /var/run/cri-dockerd.sock"

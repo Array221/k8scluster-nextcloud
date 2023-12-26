@@ -1,0 +1,23 @@
+---
+- name: Create directory with helm value files
+  ansible.builtin.file:
+    path: /home/{{user}}/helm
+    state: directory
+- name: Add ingress-nginx chart repo
+  kubernetes.core.helm_repository:
+    name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+- name: Create values file for ingress-nginx chart
+  ansible.builtin.template:
+    src: ingress-nginx.values.j2
+    dest: /home/{{user}}/helm/ingress-nginx.values.yml
+- name: Deploy ingress-nginx chart
+  kubernetes.core.helm:
+    name: ingress-nginx
+    chart_ref: ingress-nginx/ingress-nginx
+    namespace: ingress-nginx
+    values_files:
+      - /home/{{user}}/helm/ingress-nginx.values.yml
+    wait: yes
+    update_repo_cache: yes
+    create_namespace: yes

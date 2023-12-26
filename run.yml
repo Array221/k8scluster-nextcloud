@@ -1,0 +1,68 @@
+#!/usr/bin/env ansible-playbook
+---
+- name: Apply basic configuration
+  hosts: all
+  become: yes
+  roles:
+    - role: array221.clearbox
+      vars:
+        sudoUser: "{{user}}"
+        sshKeysLink: "{{keys}}"
+        desiredLocale: pl_PL.UTF-8
+        desiredTimezone: Europe/Warsaw
+        sshPort: "{{newSSHPort}}"
+        additionalPackages:
+          - curl
+          - wget
+          - vim
+          - ranger
+          - pv
+          - less
+          - htop
+          - dnsutils
+          - tmux
+- name: Install docker
+  hosts: all
+  become: yes
+  roles:
+    - role: geerlingguy.docker
+  tasks:
+    - include_tasks: tasks/all/installDocker.yml
+- name: Disable swap
+  hosts: all
+  become: yes
+  tasks:
+    - include_tasks: tasks/all/disableSwap.yml
+- name: Install cri-dockerd
+  hosts: all
+  become: yes
+  tasks:
+    - import_tasks: tasks/all/installCRI.yml
+- name: Install Kubernetes
+  hosts: all
+  become: yes
+  tasks:
+    - import_tasks: tasks/all/installKubernetes.yml
+- name: Install control plane dependencies
+  hosts: controlPlane
+  become: yes
+  tasks:
+    - import_tasks: tasks/controlPlane/installMasterDependencies.yml
+- name: Initialize Kubernetes cluster
+  hosts: controlPlane
+  become: yes
+  tasks:
+    - import_tasks: tasks/controlPlane/initCluster.yml
+- name: Join Kubernetes cluster
+  hosts: workers
+  become: yes
+  tasks:
+    - import_tasks: tasks/workers/joinCluster.yml
+- name: Deploy ingress-nginx
+  hosts: controlPlane
+  tasks:
+    - import_tasks: tasks/controlPlane/deployIngressNginx.yml
+- name: Deploy Nextcloud
+  hosts: controlPlane
+  tasks:
+    - import_tasks: tasks/controlPlane/deployNextcloud.yml

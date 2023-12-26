@@ -1,0 +1,9 @@
+---
+- name: Umount swap partitions
+  ansible.builtin.shell: swapoff -a
+  when: ansible_swaptotal_mb > 0
+- name: Remove swap partitions from /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: ^([^#].*?\sswap\s+sw\s+.*)$
+    replace: '# \1'

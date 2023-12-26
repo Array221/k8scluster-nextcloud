@@ -1,0 +1,22 @@
+---
+- name: Create directory with helm value files
+  ansible.builtin.file:
+    path: /home/{{user}}/helm
+    state: directory
+- name: Add nextcloud chart repo
+  kubernetes.core.helm_repository:
+    name: nextcloud
+    url: https://nextcloud.github.io/helm/
+- name: Create values file for nextcloud chart
+  ansible.builtin.template:
+    src: nextcloud.values.j2
+    dest: /home/{{user}}/helm/nextcloud.values.yml
+- name: Deploy nextcloud chart
+  kubernetes.core.helm:
+    name: nextcloud
+    chart_ref: nextcloud/nextcloud
+    namespace: nextcloud
+    values_files:
+      - /home/{{user}}/helm/nextcloud.values.yml
+    update_repo_cache: yes
+    create_namespace: yes

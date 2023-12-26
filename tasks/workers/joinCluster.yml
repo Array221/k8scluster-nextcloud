@@ -1,0 +1,5 @@
+---
+- name: Join cluster
+  ansible.builtin.command:
+    cmd: "{{hostvars['controlPlane']['kubernetesJoinCommand']}}"
+    creates: /etc/kubernetes/kubelet.conf

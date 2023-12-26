@@ -1,0 +1,59 @@
+---
+- name: Check if cri-docker is installed
+  ansible.builtin.stat:
+    path: /usr/bin/cri-dockerd
+  register: cridockerdinstalled
+- name: Get latest cri-docker version number
+  ansible.builtin.shell:
+    cmd: curl -s https://api.github.com/repos/Mirantis/cri-dockerd/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -d v -f 2
+    warn: no
+  register: cridockerversion
+  when: not cridockerdinstalled.stat.exists
+- name: Download latest cri-docker binary
+  ansible.builtin.get_url:
+    url: https://github.com/Mirantis/cri-dockerd/releases/download/v{{cridockerversion.stdout}}/cri-dockerd-{{cridockerversion.stdout}}.amd64.tgz
+    dest: /tmp/cri-docker.tar.gz
+  when: not cridockerdinstalled.stat.exists
+- name: Extract cri-docker binary
+  ansible.builtin.unarchive:
+    src: /tmp/cri-docker.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not cridockerdinstalled.stat.exists
+- name: Install cri-dockerd binary
+  ansible.builtin.copy:
+    src: /tmp/cri-dockerd/cri-dockerd
+    remote_src: yes
+    dest: /usr/bin/cri-dockerd
+    mode: 0755
+    owner: root
+    group: root
+  when: not cridockerdinstalled.stat.exists
+- name: Download cri-docker service file
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.service
+    dest: /etc/systemd/system/cri-docker.service
+    force: no
+    owner: root
+    group: root
+- name: Download cri-docker socket file
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/Mirantis/cri-dockerd/master/packaging/systemd/cri-docker.socket
+    dest: /etc/systemd/system/cri-docker.socket
+    force: no
+    owner: root
+    group: root
+- name: Enable cri-docker service in systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    name: cri-docker.service
+    enabled: yes
+- name: Enable cri-docker socket in systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    name: cri-docker.socket
+    enabled: yes
+- name: Start cri-docker
+  ansible.builtin.systemd:
+    name: cri-docker.service
+    state: started

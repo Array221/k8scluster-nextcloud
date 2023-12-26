@@ -1,0 +1,32 @@
+all:
+  hosts:
+    controlPlane:
+      ansible_connection: ssh
+      ansible_host: controlplane.example.com
+      ansible_port: 22
+      ansible_user: root
+  vars:
+    user: exampleUser
+    keys: https://github.com/example.keys
+    newSSHPort: 22
+    podNetwork: 10.0.0.0/16
+    ingressExternalIP: 123.45.67.89
+    nextcloudDomain: nextcloud.example.com
+
+workers:
+  hosts:
+    worker1:
+      ansible_connection: ssh
+      ansible_host: worker1.example.com
+      ansible_port: 22
+      ansible_user: root
+    worker2:
+      ansible_connection: ssh
+      ansible_host: worker2.example.com
+      ansible_port: 22
+      ansible_user: root
+    worker3:
+      ansible_connection: ssh
+      ansible_host: worker3.example.com
+      ansible_port: 22
+      ansible_user: root
